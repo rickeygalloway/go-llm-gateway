@@ -1,0 +1,58 @@
+# Go-LLM-Gateway configuration
+# Override any value with GATEWAY_<KEY> environment variables.
+# e.g. GATEWAY_SERVER_ADDR=":9090"
+
+server:
+  addr: ":8080"
+  read_timeout: 30s
+  write_timeout: 5m     # Long for streaming responses
+  shutdown_timeout: 30s
+
+log:
+  level: "info"         # trace | debug | info | warn | error
+  format: "json"        # json | console
+
+auth:
+  enabled: false        # Set to true and populate keys[] for production
+  # keys:
+  #   - "sk-gateway-your-secret-key"
+
+providers:
+  # Ollama — local models, highest priority (lowest number = tried first)
+  - type: ollama
+    name: ollama
+    base_url: "http://ollama:11434"   # docker-compose service name
+    priority: 0
+    timeout: 120s
+    max_retries: 1
+    models:             # If empty, queries /api/tags dynamically
+      - "llama3.2:3b"
+      - "mistral:7b"
+
+  # OpenAI — cloud fallback
+  # Uncomment and set GATEWAY_PROVIDERS_1_APIKEY=sk-... to enable
+  # - type: openai
+  #   name: openai
+  #   api_key: ""       # Set via env: GATEWAY_PROVIDERS_1_APIKEY
+  #   priority: 10
+  #   timeout: 30s
+  #   models:
+  #     - "gpt-4o"
+  #     - "gpt-4o-mini"
+
+  # Anthropic — cloud fallback
+  # - type: anthropic
+  #   name: anthropic
+  #   api_key: ""       # Set via env: GATEWAY_PROVIDERS_2_APIKEY
+  #   priority: 20
+  #   timeout: 60s
+  #   models:
+  #     - "claude-sonnet-4-6"
+  #     - "claude-haiku-4-5-20251001"
+
+  # vLLM — GPU cluster inference
+  # - type: vllm
+  #   name: vllm-gpu
+  #   base_url: "http://vllm-service:8000/v1"
+  #   priority: 5
+  #   timeout: 60s

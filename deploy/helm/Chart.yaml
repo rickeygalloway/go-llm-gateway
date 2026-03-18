@@ -1,0 +1,15 @@
+apiVersion: v2
+name: go-llm-gateway
+description: A production-grade LLM gateway supporting Ollama, OpenAI, Anthropic, and vLLM with fallback routing, rate limiting, and observability.
+type: application
+version: 0.1.0
+appVersion: "latest"
+keywords:
+  - llm
+  - gateway
+  - openai
+  - ollama
+  - inference
+home: https://github.com/go-llm-gateway/go-llm-gateway
+maintainers:
+  - name: go-llm-gateway maintainers

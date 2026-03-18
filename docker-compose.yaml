@@ -1,0 +1,132 @@
+version: "3.9"
+
+# Go-LLM-Gateway local development stack
+# Start:   docker compose up -d
+# Stop:    docker compose down
+# Logs:    docker compose logs -f gateway
+#
+# After starting, pull a model into Ollama:
+#   docker exec -it go-llm-gateway-ollama-1 ollama pull llama3.2:3b
+
+services:
+
+  # ---- Gateway ---------------------------------------------------------------
+  gateway:
+    build:
+      context: .
+      args:
+        VERSION: dev
+        COMMIT: local
+        BUILD_DATE: "2025-01-01"
+    image: go-llm-gateway:dev
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./config.yaml:/etc/go-llm-gateway/config.yaml:ro
+    environment:
+      GATEWAY_LOG_FORMAT: "console"
+      GATEWAY_LOG_LEVEL: "debug"
+    depends_on:
+      ollama:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "/gateway", "-health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ---- Ollama ----------------------------------------------------------------
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    # GPU passthrough (uncomment if you have NVIDIA GPU + nvidia-container-toolkit):
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+    restart: unless-stopped
+
+  # ---- Postgres + pgvector ---------------------------------------------------
+  # Used in Step 5 for: request metadata storage, semantic cache embeddings
+  postgres:
+    image: pgvector/pgvector:pg16
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: gateway
+      POSTGRES_PASSWORD: gateway
+      POSTGRES_DB: llmgateway
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./deploy/k8s/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gateway -d llmgateway"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # ---- Redis -----------------------------------------------------------------
+  # Used in Step 2 for: rate limiting, semantic cache hit/miss tracking
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --save 60 1 --loglevel warning
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+  # ---- Kafka -----------------------------------------------------------------
+  # Used in Step 4 for: async batch inference, model-refresh events
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.7.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper
+    restart: unless-stopped
+
+  kafka:
+    image: confluentinc/cp-kafka:7.7.0
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    volumes:
+      - kafka_data:/var/lib/kafka
+    depends_on:
+      - zookeeper
+    restart: unless-stopped
+
+volumes:
+  ollama_data:
+  postgres_data:
+  redis_data:
+  zookeeper_data:
+  kafka_data:

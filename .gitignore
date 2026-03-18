@@ -1,0 +1,14 @@
+bin/
+coverage.out
+coverage.html
+*.test
+*.prof
+go.sum
+
+# Config with secrets
+config.local.yaml
+
+# IDE
+.idea/
+.vscode/
+*.swp

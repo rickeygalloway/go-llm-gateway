@@ -1,0 +1,119 @@
+# Default values for go-llm-gateway.
+# Override with: helm install go-llm-gateway ./deploy/helm -f my-values.yaml
+
+replicaCount: 2
+
+image:
+  repository: go-llm-gateway
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+# Image pull secrets (for private registries)
+imagePullSecrets: []
+
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: ClusterIP
+  port: 80
+  targetPort: 8080
+
+# Ingress — enable for external traffic
+ingress:
+  enabled: false
+  className: "nginx"
+  annotations: {}
+  hosts:
+    - host: llm-gateway.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+# Resource limits — size for your expected QPS * avg token latency
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "1000m"
+    memory: "512Mi"
+
+# Horizontal pod autoscaling (enable for production)
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 80
+
+# Pod disruption budget (keep at least 1 replica during rolling updates)
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "8080"
+  prometheus.io/path: "/metrics"
+
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 65532
+  fsGroup: 65532
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  capabilities:
+    drop: ["ALL"]
+
+# Liveness and readiness probes
+livenessProbe:
+  httpGet:
+    path: /healthz
+    port: 8080
+  initialDelaySeconds: 5
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /readyz
+    port: 8080
+  initialDelaySeconds: 5
+  periodSeconds: 10
+  failureThreshold: 3
+
+# Gateway configuration — rendered into a ConfigMap and mounted as config.yaml
+gateway:
+  log:
+    level: "info"
+    format: "json"
+  auth:
+    enabled: false
+    # keys:
+    #   - "sk-gateway-..."
+  providers:
+    - type: ollama
+      name: ollama
+      base_url: "http://ollama:11434"
+      priority: 0
+      timeout: 120s
+    # - type: openai
+    #   name: openai
+    #   api_key: ""    # provide via --set gateway.providers[1].api_key=sk-...
+    #   priority: 10
+
+# API keys stored in a K8s Secret (prefer external-secrets-operator in prod)
+secrets:
+  # openaiApiKey: ""
+  # anthropicApiKey: ""
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
