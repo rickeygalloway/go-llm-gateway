@@ -4,7 +4,7 @@
 # Usage:
 #   ./build.sh           — build bin/gateway (default)
 #   ./build.sh test      — run all unit tests
-#   ./build.sh run       — run the gateway (requires config.yaml)
+#   ./build.sh run       — run the gateway (uses config.local.yaml if present, else config.yaml)
 #   ./build.sh tidy      — go mod tidy
 #   ./build.sh check     — vet + build + test
 #
@@ -83,9 +83,13 @@ case "$CMD" in
     ;;
 
   run)
-    echo "Starting gateway (Ctrl+C to stop)..."
-    GATEWAY_LOG_FORMAT=console GATEWAY_LOG_LEVEL=debug \
-      "$GO" run -ldflags="$LDFLAGS" ./cmd/gateway -config config.yaml
+    # Prefer config.local.yaml (localhost URLs) over config.yaml (Docker hostnames)
+    CONFIG="config.yaml"
+    if [[ -f "config.local.yaml" ]]; then
+      CONFIG="config.local.yaml"
+    fi
+    echo "Starting gateway with $CONFIG (Ctrl+C to stop)..."
+    "$GO" run -ldflags="$LDFLAGS" ./cmd/gateway -config "$CONFIG"
     ;;
 
   tidy)

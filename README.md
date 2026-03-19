@@ -19,57 +19,56 @@ A production-grade LLM gateway in Go. Drop-in OpenAI-compatible API that routes 
 
 ---
 
-## Quick start
+## Start
 
+**First time only** — pull a model after the stack is up:
 ```bash
-# Build
-./build.sh            # compiles → bin/gateway
-
-# Test
-./build.sh test       # runs all 28 unit tests
-./build.sh check      # vet + build + test (CI-style)
-
-# Run
-./build.sh run        # starts server on :8080
-
-# Other
-./build.sh tidy       # go mod tidy
+docker compose up -d
+docker exec -it go-llm-gateway-ollama-1 ollama pull llama3.2:3b
 ```
 
-`build.sh` auto-discovers your Go binary — no PATH setup required.
+**Every other time** — one command:
+```bash
+docker compose up -d
+```
+
+Everything has `restart: unless-stopped`, so it also comes back automatically after a reboot.
 
 ---
 
-## Running the full stack
+## build.sh cheat sheet
+
+`build.sh` auto-discovers your Go binary — no PATH setup required.
 
 ```bash
-# 1. Start all infrastructure (Ollama, Postgres, Redis, Kafka)
-docker compose up -d
-
-# 2. Pull a model into Ollama (first time only, ~2 GB)
-docker exec -it go-llm-gateway-ollama-1 ollama pull llama3.2:3b
-
-# 3. Start the gateway
-./build.sh run
+./build.sh            # compile → bin/gateway
+./build.sh test       # run all unit tests
+./build.sh check      # vet + build + test (CI-style)
+./build.sh run        # run gateway locally on :8080
+./build.sh tidy       # go mod tidy
 ```
 
-Then test it:
+`./build.sh run` uses `config.local.yaml` (localhost URLs) automatically when present, so it works alongside the Dockerised infrastructure without any extra config.
+
+---
+
+## Test the running gateway
 
 ```bash
 # Chat completion
 curl -s http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
-  -d '{"model":"llama3.2:3b","messages":[{"role":"user","content":"Hello!"}]}'
+  -d "{\"model\":\"llama3.2:3b\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}"
 
 # Streaming
 curl -N http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
-  -d '{"model":"llama3.2:3b","messages":[{"role":"user","content":"Count to 5"}],"stream":true}'
+  -d "{\"model\":\"llama3.2:3b\",\"messages\":[{\"role\":\"user\",\"content\":\"Count to 5\"}],\"stream\":true}"
 
-# List available models (aggregated from all providers)
+# List models
 curl -s http://localhost:8080/v1/models
 
-# Health / readiness
+# Health check
 curl -s http://localhost:8080/healthz
 curl -s http://localhost:8080/readyz
 ```

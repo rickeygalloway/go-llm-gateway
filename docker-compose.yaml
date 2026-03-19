@@ -36,11 +36,8 @@ services:
       kafka:
         condition: service_started
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "/gateway", "-health"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
+    # No healthcheck here — /healthz is available externally, but distroless
+    # has no curl/wget inside the container to run one.
 
   # ---- Ollama ----------------------------------------------------------------
   ollama:
