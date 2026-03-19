@@ -1,0 +1,23 @@
+run:
+  timeout: 5m
+
+linters:
+  enable:
+    - errcheck       # check for unchecked errors
+    - gosimple       # simplify code suggestions
+    - govet          # go vet checks
+    - ineffassign    # detect ineffectual assignments
+    - staticcheck    # static analysis
+    - unused         # detect unused code
+    - gofmt          # enforce formatting
+    - misspell       # spell checking
+
+linters-settings:
+  gofmt:
+    simplify: true
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - errcheck

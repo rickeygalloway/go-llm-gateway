@@ -158,3 +158,27 @@ The key design decision: **all providers speak the OpenAI wire format**. The `pk
 ```
 
 Unit tests use `httptest.NewServer` to mock each provider's HTTP API — no running Ollama or API keys needed. Integration tests (tagged `//go:build integration`) require `docker compose up -d` first.
+
+---
+
+## Development
+
+Pre-commit hooks run automatically on every `git commit`:
+
+| Hook | Action |
+|------|--------|
+| `go-fmt` | Format Go code |
+| `go-vet` | Run go vet |
+| `gitleaks` | Block commits containing credentials or high-entropy secrets |
+| `detect-private-key` | Block PEM private keys |
+
+Run `pre-commit install` once after cloning.
+
+```bash
+# Manual quality checks
+make fmt      # gofmt + goimports
+make vet      # go vet
+make lint     # golangci-lint
+make test     # unit tests with race detector
+make check    # all of the above
+```
