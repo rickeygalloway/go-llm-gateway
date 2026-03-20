@@ -1,15 +1,29 @@
+# Compiled binaries
 bin/
-coverage.out
-coverage.html
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test artifacts
 *.test
 *.prof
-go.sum
+coverage.out
+coverage.html
 
 # Config with secrets
 config.local.yaml
 .env
 
-# IDE
+# Go workspace
+go.work.sum
+
+# IDEs
 .idea/
 .vscode/
 *.swp
+
+# OS
+.DS_Store
+Thumbs.db

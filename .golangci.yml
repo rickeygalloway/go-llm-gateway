@@ -10,11 +10,15 @@ linters:
     - staticcheck    # static analysis
     - unused         # detect unused code
     - gofmt          # enforce formatting
+    - goimports      # enforce import ordering
     - misspell       # spell checking
+    - godot          # check comment punctuation
 
 linters-settings:
   gofmt:
     simplify: true
+  goimports:
+    local-prefixes: github.com/go-llm-gateway/go-llm-gateway
 
 issues:
   exclude-rules:
