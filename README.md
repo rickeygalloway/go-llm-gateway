@@ -161,6 +161,23 @@ Unit tests use `httptest.NewServer` to mock each provider's HTTP API — no runn
 
 ---
 
+## Debug mode
+
+Set the log level to `debug` via environment variable or config:
+
+```bash
+GATEWAY_LOG_LEVEL=debug make run
+```
+
+Or in `config.local.yaml`:
+
+```yaml
+log:
+  level: debug
+```
+
+---
+
 ## Development
 
 Pre-commit hooks run automatically on every `git commit`:
