@@ -8,6 +8,8 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
+	"time"
 
 	"github.com/rs/zerolog"
 
@@ -39,6 +41,11 @@ type Router struct {
 	registry *providers.Registry
 
 	logger zerolog.Logger
+
+	// Auto-routing targets resolved at construction time from configured models.
+	autoFast     string // fastest local model for short/conversational requests
+	autoCode     string // code-specialised model for technical requests
+	autoPowerful string // most capable model for long/complex requests
 }
 
 // NewRouter builds a Router from a set of RouteConfigs and a Provider Registry.
@@ -102,8 +109,44 @@ func NewRouterFromRegistry(cfgs []providers.ProviderConfig, registry *providers.
 		} else {
 			for _, model := range cfg.Models {
 				r.chains[model] = append(r.chains[model], p)
+				lower := strings.ToLower(model + " " + cfg.EffectiveName())
+				if r.autoFast == "" {
+					r.autoFast = model
+				}
+				if r.autoCode == "" && (strings.Contains(lower, "deepseek") ||
+					strings.Contains(lower, "r1") ||
+					strings.Contains(lower, "code") ||
+					strings.Contains(lower, "coder")) {
+					r.autoCode = model
+				}
 			}
 		}
+	}
+
+	// Resolve powerful model: first model from the default chain provider (e.g. Grok).
+	if len(r.defaultChain) > 0 {
+		resolveCtx, resolveCancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer resolveCancel()
+		if models, err := r.defaultChain[0].ListModels(resolveCtx); err == nil && len(models) > 0 {
+			r.autoPowerful = models[0].ID
+			logger.Debug().
+				Str("model", r.autoPowerful).
+				Str("provider", r.defaultChain[0].Name()).
+				Msg("auto powerful model resolved")
+		}
+	}
+	if r.autoCode == "" {
+		r.autoCode = r.autoFast
+	}
+	if r.autoPowerful == "" {
+		r.autoPowerful = r.autoFast
+	}
+	if r.autoFast != "" || len(r.defaultChain) > 0 {
+		logger.Info().
+			Str("fast", r.autoFast).
+			Str("code", r.autoCode).
+			Str("powerful", r.autoPowerful).
+			Msg("auto routing configured")
 	}
 
 	return r, nil
@@ -190,10 +233,13 @@ func (r *Router) RouteStream(ctx context.Context, req *openaitypes.ChatCompletio
 }
 
 // AllModels aggregates the model list from all healthy providers.
+// The virtual "auto" model is prepended so clients can always request it.
 // Used by the /v1/models endpoint.
 func (r *Router) AllModels(ctx context.Context) []openaitypes.Model {
-	var all []openaitypes.Model
-	seen := make(map[string]bool)
+	all := []openaitypes.Model{
+		{ID: "auto", Object: "model", Created: 0, OwnedBy: "gateway"},
+	}
+	seen := map[string]bool{"auto": true}
 
 	for _, p := range r.registry.All() {
 		models, err := p.ListModels(ctx)
@@ -209,6 +255,34 @@ func (r *Router) AllModels(ctx context.Context) []openaitypes.Model {
 		}
 	}
 	return all
+}
+
+// ResolveModel returns the best concrete model ID for the given messages
+// when the client requests the virtual "auto" model.
+func (r *Router) ResolveModel(msgs []openaitypes.Message) string {
+	switch classify(msgs) {
+	case hintCode:
+		if r.autoCode != "" {
+			return r.autoCode
+		}
+	case hintPowerful:
+		if r.autoPowerful != "" {
+			return r.autoPowerful
+		}
+	}
+	return r.autoFast
+}
+
+// ProviderForModel returns the name of the first provider that handles model.
+// Falls back to the default chain provider for unregistered model IDs.
+func (r *Router) ProviderForModel(model string) string {
+	if chain, ok := r.chains[model]; ok && len(chain) > 0 {
+		return chain[0].Name()
+	}
+	if len(r.defaultChain) > 0 {
+		return r.defaultChain[0].Name()
+	}
+	return "unknown"
 }
 
 // chainForModel returns the provider chain for the given model ID.
