@@ -88,7 +88,7 @@ docker-up:
 	docker compose up -d
 	@echo ""
 	@echo "Services started. Gateway will be available at http://localhost:8080"
-	@echo "Pull a model with: docker exec -it go-llm-gateway-ollama-1 ollama pull llama3.2:3b"
+	@echo "Pull a model with: docker exec -it go-llm-gateway-ollama-1 ollama pull llama3.2:latest"
 
 .PHONY: docker-down
 docker-down:

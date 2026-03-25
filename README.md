@@ -21,18 +21,41 @@ A production-grade LLM gateway in Go. Drop-in OpenAI-compatible API that routes 
 
 ## Start
 
-**First time only** — pull a model after the stack is up:
+### Docker (full stack)
+
+**First time only:**
 ```bash
 docker compose up -d
-docker exec -it go-llm-gateway-ollama-1 ollama pull llama3.2:3b
+docker exec -it go-llm-gateway-ollama-1 ollama pull llama3.2:latest
 ```
 
-**Every other time** — one command:
+**Every other time:**
 ```bash
 docker compose up -d
 ```
 
-Everything has `restart: unless-stopped`, so it also comes back automatically after a reboot.
+Everything has `restart: unless-stopped`, so it comes back automatically after a reboot.
+
+### Local dev (no Docker)
+
+Requires [Ollama](https://ollama.com) installed and running.
+
+```bash
+# 1. Pull at least one model
+ollama pull llama3.2:latest
+
+# 2. Create your local config (gitignored — safe to add API keys)
+cp config.local.yaml.example config.local.yaml
+
+# 3. Start the gateway (auto-uses config.local.yaml)
+./build.sh run
+```
+
+Add more models to `config.local.yaml` after pulling them:
+```bash
+ollama pull hermes3:8b
+ollama pull deepseek-r1:1.5b
+```
 
 ---
 
@@ -58,12 +81,12 @@ Everything has `restart: unless-stopped`, so it also comes back automatically af
 # Chat completion
 curl -s http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
-  -d "{\"model\":\"llama3.2:3b\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}"
+  -d "{\"model\":\"llama3.2:latest\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello\"}]}"
 
 # Streaming
 curl -N http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
-  -d "{\"model\":\"llama3.2:3b\",\"messages\":[{\"role\":\"user\",\"content\":\"Count to 5\"}],\"stream\":true}"
+  -d "{\"model\":\"llama3.2:latest\",\"messages\":[{\"role\":\"user\",\"content\":\"Count to 5\"}],\"stream\":true}"
 
 # List models
 curl -s http://localhost:8080/v1/models
@@ -81,13 +104,13 @@ Edit `config.yaml` or override any field with `GATEWAY_<KEY>` env vars.
 
 ```yaml
 providers:
-  - type: ollama          # ollama | openai | anthropic | vllm
+  - type: ollama          # ollama | openai | anthropic | vllm | deepseek
     name: ollama
     base_url: "http://ollama:11434"
     priority: 0           # lower = tried first in fallback chain
     timeout: 120s
     models:               # leave empty to query provider dynamically
-      - llama3.2:3b
+      - llama3.2:latest
 ```
 
 | Field | Env var override | Default |

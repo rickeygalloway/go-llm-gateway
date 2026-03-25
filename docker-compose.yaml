@@ -6,7 +6,7 @@ version: "3.9"
 # Logs:    docker compose logs -f gateway
 #
 # After starting, pull a model into Ollama:
-#   docker exec -it go-llm-gateway-ollama-1 ollama pull llama3.2:3b
+#   docker exec -it go-llm-gateway-ollama-1 ollama pull llama3.2:latest
 
 services:
 

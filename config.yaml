@@ -1,6 +1,6 @@
-# Local development config — used when running bin/gateway directly (not in Docker).
-# Ollama and other services are reached via localhost since we're outside Docker networking.
-# docker-compose spins up the infra; this config points the local binary at it.
+# config.yaml — Docker / production config (committed, no secrets).
+# Used by docker-compose.yaml. Targets Docker service hostnames.
+# For local dev outside Docker, copy config.local.yaml.example → config.local.yaml.
 
 server:
   addr: ":8080"
@@ -9,8 +9,8 @@ server:
   shutdown_timeout: 30s
 
 log:
-  level: "debug"
-  format: "console"   # human-readable for local dev
+  level: "info"
+  format: "json"
 
 auth:
   enabled: false
@@ -18,15 +18,13 @@ auth:
 providers:
   - type: ollama
     name: ollama
-    base_url: "http://localhost:11434"   # localhost when running outside Docker
+    base_url: "http://ollama:11434"   # Docker service hostname
     priority: 0
     timeout: 120s
     models:
       - "llama3.2:latest"
-      - "hermes3:8b"
 
-  # Uncomment to test cloud fallback locally:
+  # Uncomment + set GATEWAY_PROVIDERS_1_APIKEY=sk-... to add OpenAI fallback:
   # - type: openai
   #   name: openai
-  #   api_key: ""    # or set GATEWAY_PROVIDERS_1_APIKEY=sk-...
   #   priority: 10

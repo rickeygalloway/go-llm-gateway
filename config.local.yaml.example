@@ -1,0 +1,40 @@
+# config.local.yaml.example — local dev template (committed).
+# Copy to config.local.yaml (gitignored) and customise.
+# ./build.sh run auto-detects config.local.yaml and uses it instead of config.yaml,
+# so localhost URLs work when running the gateway outside Docker.
+#
+# Setup:
+#   cp config.local.yaml.example config.local.yaml
+#   ollama pull llama3.2:latest
+#   ./build.sh run
+
+server:
+  addr: ":8080"
+  read_timeout: 30s
+  write_timeout: 5m
+  shutdown_timeout: 30s
+
+log:
+  level: "debug"
+  format: "console"   # human-readable for local dev
+
+auth:
+  enabled: false
+
+providers:
+  - type: ollama
+    name: ollama
+    base_url: "http://localhost:11434"
+    priority: 0
+    timeout: 120s
+    models:
+      - "llama3.2:latest"   # ollama pull llama3.2:latest
+
+  # Optional: add more local models after pulling them with ollama pull <model>
+  # - "hermes3:8b"
+  # - "deepseek-r1:1.5b"
+
+  # Optional: cloud fallback (set GATEWAY_PROVIDERS_1_APIKEY=sk-... or add api_key here)
+  # - type: openai
+  #   name: openai
+  #   priority: 10
