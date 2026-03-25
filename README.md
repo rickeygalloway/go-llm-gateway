@@ -19,6 +19,12 @@ A production-grade LLM gateway in Go. Drop-in OpenAI-compatible API that routes 
 
 ---
 
+## UI
+
+**[llm-gateway-ui](https://github.com/rickeygalloway/llm-gateway-ui)** — ChatGPT-style web interface for this gateway. Built with Python FastAPI, it exposes model selection, real-time streaming, provider health monitoring, and configurable parameters (temperature, max tokens). Point it at `http://localhost:8080` to use with this gateway.
+
+---
+
 ## Start
 
 ### Docker (full stack)
@@ -104,7 +110,7 @@ Edit `config.yaml` or override any field with `GATEWAY_<KEY>` env vars.
 
 ```yaml
 providers:
-  - type: ollama          # ollama | openai | anthropic | vllm | deepseek
+  - type: ollama          # ollama | openai | anthropic | vllm | deepseek | grok
     name: ollama
     base_url: "http://ollama:11434"
     priority: 0           # lower = tried first in fallback chain

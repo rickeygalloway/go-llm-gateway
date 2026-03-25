@@ -103,15 +103,24 @@ docker-restart:
 	docker compose restart gateway
 
 # ---- Run locally ------------------------------------------------------------
+# Use ./build.sh so Go is auto-discovered and config.local.yaml is used when present.
 
 .PHONY: run
 run:
-	go run -ldflags="$(LDFLAGS)" ./cmd/gateway -config config.yaml
+	./build.sh run
 
 .PHONY: run-dev
 run-dev:
-	GATEWAY_LOG_FORMAT=console GATEWAY_LOG_LEVEL=debug \
-	go run -ldflags="$(LDFLAGS)" ./cmd/gateway -config config.yaml
+	./build.sh run
+
+.PHONY: kill
+kill:
+	@-lsof -ti:8080 2>/dev/null | xargs kill -9 2>/dev/null || \
+	 cmd.exe /c "for /f \"tokens=5\" %a in ('netstat -aon ^| findstr :8080 ^| findstr LISTENING') do @taskkill /PID %a /F" 2>/dev/null || true
+
+.PHONY: restart
+restart: kill
+	./build.sh run
 
 # ---- Kubernetes / Helm ------------------------------------------------------
 

@@ -24,7 +24,13 @@ providers:
     models:
       - "llama3.2:latest"
 
-  # Uncomment + set GATEWAY_PROVIDERS_1_APIKEY=sk-... to add OpenAI fallback:
+  # Uncomment + set api_key to add cloud fallbacks:
   # - type: openai
   #   name: openai
   #   priority: 10
+  # - type: deepseek
+  #   name: deepseek
+  #   priority: 20
+  # - type: grok
+  #   name: grok
+  #   priority: 30

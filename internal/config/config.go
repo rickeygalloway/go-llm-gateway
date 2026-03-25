@@ -105,11 +105,11 @@ func validate(cfg *Config) error {
 		if p.Type == "" {
 			return fmt.Errorf("providers[%d]: type is required", i)
 		}
-		validTypes := map[string]bool{"ollama": true, "openai": true, "anthropic": true, "vllm": true}
+		validTypes := map[string]bool{"ollama": true, "openai": true, "anthropic": true, "vllm": true, "deepseek": true, "grok": true}
 		if !validTypes[p.Type] {
-			return fmt.Errorf("providers[%d]: unknown type %q (valid: ollama, openai, anthropic, vllm)", i, p.Type)
+			return fmt.Errorf("providers[%d]: unknown type %q (valid: ollama, openai, anthropic, vllm, deepseek, grok)", i, p.Type)
 		}
-		if p.BaseURL == "" && p.Type != "openai" && p.Type != "anthropic" {
+		if p.BaseURL == "" && p.Type != "openai" && p.Type != "anthropic" && p.Type != "deepseek" && p.Type != "grok" {
 			return fmt.Errorf("providers[%d] (%s): base_url is required", i, p.Type)
 		}
 	}

@@ -30,6 +30,8 @@ import (
 	"github.com/go-llm-gateway/go-llm-gateway/internal/gateway"
 	"github.com/go-llm-gateway/go-llm-gateway/internal/providers"
 	anthropicprovider "github.com/go-llm-gateway/go-llm-gateway/internal/providers/anthropic"
+	deepseeekprovider "github.com/go-llm-gateway/go-llm-gateway/internal/providers/deepseek"
+	grokprovider "github.com/go-llm-gateway/go-llm-gateway/internal/providers/grok"
 	ollamaprovider "github.com/go-llm-gateway/go-llm-gateway/internal/providers/ollama"
 	openaiprovider "github.com/go-llm-gateway/go-llm-gateway/internal/providers/openai"
 	vllmprovider "github.com/go-llm-gateway/go-llm-gateway/internal/providers/vllm"
@@ -77,6 +79,10 @@ func run(configPath string) error {
 			p = openaiprovider.New(pc)
 		case "anthropic":
 			p = anthropicprovider.New(pc, logger)
+		case "deepseek":
+			p = deepseeekprovider.New(pc, logger)
+		case "grok":
+			p = grokprovider.New(pc, logger)
 		case "vllm":
 			p = vllmprovider.New(pc, logger)
 		default:
