@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rtk ls:*)",
+      "Bash(make *)",
+      "Bash(go test *)",
+      "Bash(go vet *)",
+      "Bash(go build *)",
+      "Bash(pre-commit run *)",
+      "Bash(curl -s http://localhost:8080/v1/models)"
+    ]
+  }
+}
