@@ -64,6 +64,13 @@ func (h *Handler) ChatCompletions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.Model == "auto" {
+		if resolved := h.router.ResolveModel(req.Messages); resolved != "" {
+			h.logger.Info().Str("resolved", resolved).Msg("auto model resolved")
+			req.Model = resolved
+		}
+	}
+
 	if req.Stream {
 		h.chatCompletionsStream(w, r, &req)
 		return
@@ -76,6 +83,8 @@ func (h *Handler) ChatCompletions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Gateway-Model", req.Model)
+	w.Header().Set("X-Gateway-Provider", h.router.ProviderForModel(req.Model))
 	json.NewEncoder(w).Encode(resp)
 }
 
@@ -89,6 +98,8 @@ func (h *Handler) chatCompletionsStream(w http.ResponseWriter, r *http.Request, 
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
 	w.Header().Set("X-Accel-Buffering", "no") // disable nginx buffering
+	w.Header().Set("X-Gateway-Model", req.Model)
+	w.Header().Set("X-Gateway-Provider", h.router.ProviderForModel(req.Model))
 
 	flusher, ok := w.(http.Flusher)
 	if !ok {
